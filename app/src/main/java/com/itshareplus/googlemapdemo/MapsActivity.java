@@ -90,29 +90,35 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         etDestination = (EditText) findViewById(R.id.etDestination);
         currentlocation = (Button) findViewById(R.id.currentlocation);
 
+
         btnFindPath.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 sendRequest();
             }
         });
+
     }
 
 
     private void sendRequest() {
-        String origin = etOrigin.getText().toString();
+
+        double currentLatitude = curLocation.getLatitude();
+        double currentLongitude = curLocation.getLongitude();
+        String origin = currentLatitude +","+ currentLongitude; //etOrigin.getText().toString();
+        String waypoint = etOrigin.getText().toString();
         String destination = etDestination.getText().toString();
-        if (origin.isEmpty()) {
+        /*if (origin.isEmpty()) {
             Toast.makeText(this, "Please enter origin address!", Toast.LENGTH_SHORT).show();
             return;
-        }
+        }*/
         if (destination.isEmpty()) {
             Toast.makeText(this, "Please enter destination address!", Toast.LENGTH_SHORT).show();
             return;
         }
 
         try {
-            new DirectionFinder(this, origin, destination).execute();
+            new DirectionFinder(this, origin, destination, waypoint).execute();
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -151,17 +157,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     MY_PERMISSIONS_REQUEST_LOCATION);
         } else {
-
+            //curLocation = new Location("NULL");
             location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
             curLocation = location;
-            if(location==null){
+            if(curLocation==null){
                 LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
             }
             else{
                 handleNewLocation(location);
             }
         }
+
     }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -194,6 +202,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         double currentLatitude = location.getLatitude();
         double currentLongitude = location.getLongitude();
+        System.out.println("Lat:"+currentLatitude+"");
+        System.out.println("Lng:"+currentLongitude+"");
         LatLng latLng = new LatLng(currentLatitude, currentLongitude);
 
         MarkerOptions options = new MarkerOptions()
@@ -226,6 +236,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onLocationChanged(Location location) {
+
+        //LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
         handleNewLocation(location);
     }
 
@@ -284,6 +296,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(route.startLocation, 16));
             ((TextView) findViewById(R.id.tvDuration)).setText(route.duration.text);
             ((TextView) findViewById(R.id.tvDistance)).setText(route.distance.text);
+            //var markerSize = Maps.StaticMap.MarkerSize.MID;
+            //var markerColor = Maps.StaticMap.Color.GREEN
+            //var markerLetterCode = 'A'.charCodeAt();
 
             originMarkers.add(mMap.addMarker(new MarkerOptions()
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.start_blue))

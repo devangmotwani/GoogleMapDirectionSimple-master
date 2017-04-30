@@ -26,11 +26,13 @@ public class DirectionFinder {
     private DirectionFinderListener listener;
     private String origin;
     private String destination;
+    private String waypoint;
 
-    public DirectionFinder(DirectionFinderListener listener, String origin, String destination) {
+    public DirectionFinder(DirectionFinderListener listener, String origin, String destination,String waypoint) {
         this.listener = listener;
         this.origin = origin;
         this.destination = destination;
+        this.waypoint = waypoint;
     }
 
     public void execute() throws UnsupportedEncodingException {
@@ -41,8 +43,9 @@ public class DirectionFinder {
     private String createUrl() throws UnsupportedEncodingException {
         String urlOrigin = URLEncoder.encode(origin, "utf-8");
         String urlDestination = URLEncoder.encode(destination, "utf-8");
+        String urlWaypoint = URLEncoder.encode(waypoint,"utf-8");
 
-        return DIRECTION_URL_API + "origin=" + urlOrigin + "&destination=" + urlDestination + "&key=" + GOOGLE_API_KEY;
+        return DIRECTION_URL_API + "origin=" + urlOrigin + "&destination=" + urlDestination +"&waypoints=optimize:true|" + urlWaypoint + "&key=" + GOOGLE_API_KEY;
     }
 
     private class DownloadRawData extends AsyncTask<String, Void, String> {
@@ -88,6 +91,7 @@ public class DirectionFinder {
         List<Route> routes = new ArrayList<Route>();
         JSONObject jsonData = new JSONObject(data);
         JSONArray jsonRoutes = jsonData.getJSONArray("routes");
+        System.out.println("Routes: "+ jsonRoutes.length());
         for (int i = 0; i < jsonRoutes.length(); i++) {
             JSONObject jsonRoute = jsonRoutes.getJSONObject(i);
             Route route = new Route();
@@ -100,6 +104,7 @@ public class DirectionFinder {
             JSONObject jsonEndLocation = jsonLeg.getJSONObject("end_location");
             JSONObject jsonStartLocation = jsonLeg.getJSONObject("start_location");
 
+            System.out.println("Legs: "+ jsonLegs.length());
             route.distance = new Distance(jsonDistance.getString("text"), jsonDistance.getInt("value"));
             route.duration = new Duration(jsonDuration.getString("text"), jsonDuration.getInt("value"));
             route.endAddress = jsonLeg.getString("end_address");
@@ -110,6 +115,7 @@ public class DirectionFinder {
 
             routes.add(route);
         }
+
 
         listener.onDirectionFinderSuccess(routes);
     }
