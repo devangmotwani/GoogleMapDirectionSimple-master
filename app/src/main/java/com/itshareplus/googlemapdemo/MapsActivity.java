@@ -40,6 +40,8 @@ import java.util.List;
 
 import Modules.DirectionFinder;
 import Modules.DirectionFinderListener;
+import Modules.Distance;
+import Modules.Duration;
 import Modules.Route;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, DirectionFinderListener, GoogleApiClient.ConnectionCallbacks,
@@ -53,6 +55,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private EditText etDestination;
     private List<Marker> originMarkers = new ArrayList<>();
     private List<Marker> destinationMarkers = new ArrayList<>();
+    private List<Marker> waypointMarkers = new ArrayList<>();
     private List<Polyline> polylinePaths = new ArrayList<>();
     private ProgressDialog progressDialog;
 
@@ -286,29 +289,101 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     @Override
-    public void onDirectionFinderSuccess(List<Route> routes) {
+    public void onDirectionFinderSuccess(ArrayList<Route> routes) {
         progressDialog.dismiss();
         polylinePaths = new ArrayList<>();
         originMarkers = new ArrayList<>();
         destinationMarkers = new ArrayList<>();
+        waypointMarkers = new ArrayList<>();
+        Distance distance  = new Distance("0",0);
+        Duration duration = new Duration("0",0);
+
+
+        //System.out.println();
+        int length=routes.size();
+
+
+        System.out.println("Length:"+length);
+        //for (Route route : routes)
+
+
+        originMarkers.add(mMap.addMarker(new MarkerOptions()
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.start_blue))
+                .title(routes.get(0).startAddress)
+                .position(routes.get(0).startLocation)));
+        if(length>1) {
+            destinationMarkers.add(mMap.addMarker(new MarkerOptions()
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.end_green))
+                    .title(routes.get(length - 1).endAddress)
+                    .position(routes.get(length - 1).endLocation)));
+        }
+        else
+        {
+            destinationMarkers.add(mMap.addMarker(new MarkerOptions()
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.end_green))
+                    .title(routes.get(0).endAddress)
+                    .position(routes.get(0).endLocation)));
+        }
+
+        if(length > 1){
+            for (int i=1;i<length;i++) {
+                waypointMarkers.add(mMap.addMarker(new MarkerOptions()
+                        .icon(BitmapDescriptorFactory.defaultMarker())
+                        .title(routes.get(i).startAddress)
+                        .position(routes.get(i).startLocation)));
+            }
+        }
+        /*System.out.println(routes);
+        System.out.println("Start: "+routes.get(0).startAddress);
+        System.out.println("Stop: "+routes.get(0).endAddress);
+
+        System.out.println("Start: "+routes.get(1).startAddress);
+        System.out.println("Stop: "+routes.get(1).endAddress);
+
+        System.out.println("Start: "+routes.get(2).startAddress);
+        System.out.println("Stop: "+routes.get(2).endAddress);
+*/
+        //System.out.println("Start: "+routes.get(3).startAddress);
+        //System.out.println("Stop: "+routes.get(3).endAddress);
+
+        for(int j=0;j<length;j++){
+            distance.value = distance.value + routes.get(j).distance.value;
+        }
+
+        distance.value /= 1609.34;  //converting to miles
+        distance.text = distance.value+" mi";
+        ((TextView) findViewById(R.id.tvDistance)).setText(distance.text);
+
+        for(int j=0;j<length;j++){
+            duration.value = duration.value + routes.get(j).duration.value;
+        }
+        duration.value /= 60;
+        duration.text = duration.value+" mins";
+        ((TextView) findViewById(R.id.tvDuration)).setText(duration.text);
+
 
         for (Route route : routes) {
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(route.startLocation, 16));
-            ((TextView) findViewById(R.id.tvDuration)).setText(route.duration.text);
-            ((TextView) findViewById(R.id.tvDistance)).setText(route.distance.text);
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(route.startLocation, 10));
+
+            //System.out.println("Start: "+route.startAddress);
+            //System.out.println("Stop: "+route.endAddress);
+
             //var markerSize = Maps.StaticMap.MarkerSize.MID;
             //var markerColor = Maps.StaticMap.Color.GREEN
             //var markerLetterCode = 'A'.charCodeAt();
-
+            /*
             originMarkers.add(mMap.addMarker(new MarkerOptions()
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.start_blue))
                     .title(route.startAddress)
                     .position(route.startLocation)));
+
+
             destinationMarkers.add(mMap.addMarker(new MarkerOptions()
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.end_green))
                     .title(route.endAddress)
                     .position(route.endLocation)));
 
+            */
             PolylineOptions polylineOptions = new PolylineOptions().
                     geodesic(true).
                     color(Color.BLUE).

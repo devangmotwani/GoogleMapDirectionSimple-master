@@ -22,7 +22,7 @@ import java.util.List;
 
 public class DirectionFinder {
     private static final String DIRECTION_URL_API = "https://maps.googleapis.com/maps/api/directions/json?";
-    private static final String GOOGLE_API_KEY = "AIzaSyDnwLF2-WfK8cVZt9OoDYJ9Y8kspXhEHfI";
+    private static final String GOOGLE_API_KEY = "AIzaSyAR87QqEiqCXKga7ESdtX6H2qINdZdZbGc";
     private DirectionFinderListener listener;
     private String origin;
     private String destination;
@@ -88,33 +88,54 @@ public class DirectionFinder {
         if (data == null)
             return;
 
-        List<Route> routes = new ArrayList<Route>();
+        ArrayList<Route> routes = new ArrayList<Route>();
         JSONObject jsonData = new JSONObject(data);
         JSONArray jsonRoutes = jsonData.getJSONArray("routes");
+        //JSONArray
+        //JSONArray jsonLegLength = jsonRoutes.getJSONArray("legs");
         System.out.println("Routes: "+ jsonRoutes.length());
+
         for (int i = 0; i < jsonRoutes.length(); i++) {
             JSONObject jsonRoute = jsonRoutes.getJSONObject(i);
-            Route route = new Route();
+
 
             JSONObject overview_polylineJson = jsonRoute.getJSONObject("overview_polyline");
             JSONArray jsonLegs = jsonRoute.getJSONArray("legs");
-            JSONObject jsonLeg = jsonLegs.getJSONObject(0);
-            JSONObject jsonDistance = jsonLeg.getJSONObject("distance");
-            JSONObject jsonDuration = jsonLeg.getJSONObject("duration");
-            JSONObject jsonEndLocation = jsonLeg.getJSONObject("end_location");
-            JSONObject jsonStartLocation = jsonLeg.getJSONObject("start_location");
+            System.out.println("Legs:"+jsonLegs.length());
+            for (int j = 0; j < jsonLegs.length(); j++) {
+                Route route = new Route();
+                JSONObject jsonLeg = jsonLegs.getJSONObject(j);
+                JSONObject jsonDistance = jsonLeg.getJSONObject("distance");
+                JSONObject jsonDuration = jsonLeg.getJSONObject("duration");
+                JSONObject jsonEndLocation = jsonLeg.getJSONObject("end_location");
+                JSONObject jsonStartLocation = jsonLeg.getJSONObject("start_location");
 
-            System.out.println("Legs: "+ jsonLegs.length());
-            route.distance = new Distance(jsonDistance.getString("text"), jsonDistance.getInt("value"));
-            route.duration = new Duration(jsonDuration.getString("text"), jsonDuration.getInt("value"));
-            route.endAddress = jsonLeg.getString("end_address");
-            route.startAddress = jsonLeg.getString("start_address");
-            route.startLocation = new LatLng(jsonStartLocation.getDouble("lat"), jsonStartLocation.getDouble("lng"));
-            route.endLocation = new LatLng(jsonEndLocation.getDouble("lat"), jsonEndLocation.getDouble("lng"));
-            route.points = decodePolyLine(overview_polylineJson.getString("points"));
+                System.out.println("Legs: " + jsonLegs.length());
+                route.distance = new Distance(jsonDistance.getString("text"), jsonDistance.getInt("value"));
+                route.duration = new Duration(jsonDuration.getString("text"), jsonDuration.getInt("value"));
+                route.endAddress = jsonLeg.getString("end_address");
+                route.startAddress = jsonLeg.getString("start_address");
+                route.startLocation = new LatLng(jsonStartLocation.getDouble("lat"), jsonStartLocation.getDouble("lng"));
+                route.endLocation = new LatLng(jsonEndLocation.getDouble("lat"), jsonEndLocation.getDouble("lng"));
+                route.points = decodePolyLine(overview_polylineJson.getString("points"));
+                //System.out.println("Legs: " + route.startAddress);
+                System.out.println("Start: "+route.startAddress);
+                System.out.println("Stop: "+route.endAddress);
 
-            routes.add(route);
+                routes.add(route);
+            }
+
         }
+
+        System.out.println(routes);
+        System.out.println("Start: "+routes.get(0).startAddress);
+        System.out.println("Stop: "+routes.get(0).endAddress);
+
+        System.out.println("Start: "+routes.get(1).startAddress);
+        System.out.println("Stop: "+routes.get(1).endAddress);
+
+        System.out.println("Start: "+routes.get(2).startAddress);
+        System.out.println("Stop: "+routes.get(2).endAddress);
 
 
         listener.onDirectionFinderSuccess(routes);
