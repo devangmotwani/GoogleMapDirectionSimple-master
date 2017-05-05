@@ -44,6 +44,8 @@ import Modules.Distance;
 import Modules.Duration;
 import Modules.Route;
 
+import static com.itshareplus.googlemapdemo.R.id.tvDuration;
+
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, DirectionFinderListener, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
@@ -317,7 +319,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     .title(routes.get(length - 1).endAddress)
                     .position(routes.get(length - 1).endLocation)));
         }
-        else
+        if(length==1)
         {
             destinationMarkers.add(mMap.addMarker(new MarkerOptions()
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.end_green))
@@ -333,18 +335,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         .position(routes.get(i).startLocation)));
             }
         }
-        /*System.out.println(routes);
-        System.out.println("Start: "+routes.get(0).startAddress);
-        System.out.println("Stop: "+routes.get(0).endAddress);
-
-        System.out.println("Start: "+routes.get(1).startAddress);
-        System.out.println("Stop: "+routes.get(1).endAddress);
-
-        System.out.println("Start: "+routes.get(2).startAddress);
-        System.out.println("Stop: "+routes.get(2).endAddress);
-*/
-        //System.out.println("Start: "+routes.get(3).startAddress);
-        //System.out.println("Stop: "+routes.get(3).endAddress);
 
         for(int j=0;j<length;j++){
             distance.value = distance.value + routes.get(j).distance.value;
@@ -359,7 +349,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
         duration.value /= 60;
         duration.text = duration.value+" mins";
-        ((TextView) findViewById(R.id.tvDuration)).setText(duration.text);
+        ((TextView) findViewById(tvDuration)).setText(duration.text);
 
 
         for (Route route : routes) {

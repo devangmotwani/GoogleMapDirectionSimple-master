@@ -126,7 +126,7 @@ public class DirectionFinder {
             }
 
         }
-
+        /*
         System.out.println(routes);
         System.out.println("Start: "+routes.get(0).startAddress);
         System.out.println("Stop: "+routes.get(0).endAddress);
@@ -136,7 +136,7 @@ public class DirectionFinder {
 
         System.out.println("Start: "+routes.get(2).startAddress);
         System.out.println("Stop: "+routes.get(2).endAddress);
-
+        */
 
         listener.onDirectionFinderSuccess(routes);
     }
