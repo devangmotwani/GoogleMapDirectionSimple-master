@@ -2,10 +2,12 @@ package com.itshareplus.googlemapdemo;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -58,6 +60,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private List<Marker> originMarkers = new ArrayList<>();
     private List<Marker> destinationMarkers = new ArrayList<>();
     private List<Marker> waypointMarkers = new ArrayList<>();
+
+    private List<LatLng> originLatLng = new ArrayList<>();
+    private List<String> destinationAddress= new ArrayList<>();
+    private List<String> waypointAddress = new ArrayList<>();
+
     private List<Polyline> polylinePaths = new ArrayList<>();
     private ProgressDialog progressDialog;
 
@@ -94,6 +101,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         etOrigin = (EditText) findViewById(R.id.etOrigin);
         etDestination = (EditText) findViewById(R.id.etDestination);
         currentlocation = (Button) findViewById(R.id.currentlocation);
+
 
 
         btnFindPath.setOnClickListener(new View.OnClickListener() {
@@ -214,7 +222,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         MarkerOptions options = new MarkerOptions()
                 .position(latLng)
                 .title("I am here!"+" GPS:"+"Lat: "+currentLatitude+" Lng: "+currentLongitude);
-        mMap.addMarker(options);
+        //mMap.addMarker(options);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,18));
     }
 
@@ -271,7 +279,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
      public void CurrentLocation(View view){
-         onLocationChanged(curLocation);
+         int index = waypointAddress.size();
+         String waypoint = new String();
+         for(int i=0;i<index;i++){
+             waypoint = waypoint+waypointAddress.get(i).toString()+"/";
+         }
+         System.out.println(waypoint);
+         Intent intent = new Intent(android.content.Intent.ACTION_VIEW,
+                 //Uri.parse("https://www.google.com/maps/dir/38.8321459,-77.3069551/3313+Preserve+Oaks+Ct,+Fairfax,+VA+22030/Circle+Towers,+9335+Lee+Hwy,+Fairfax,+VA+22031"));
+         Uri.parse("https://www.google.com/maps/dir/"+originLatLng.get(0).latitude+","+originLatLng.get(0).longitude+"/"+waypoint+destinationAddress));
+         //(lat,lng)
+         startActivity(intent);
      }
 
     @Override
@@ -297,6 +315,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         originMarkers = new ArrayList<>();
         destinationMarkers = new ArrayList<>();
         waypointMarkers = new ArrayList<>();
+
+        originLatLng = new ArrayList<>();
+        destinationAddress = new ArrayList<>();
+        waypointAddress = new ArrayList<>();
+
         Distance distance  = new Distance("0",0);
         Duration duration = new Duration("0",0);
 
@@ -308,16 +331,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         System.out.println("Length:"+length);
         //for (Route route : routes)
 
-
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(routes.get(0).startLocation, 10));
         originMarkers.add(mMap.addMarker(new MarkerOptions()
                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.start_blue))
                 .title(routes.get(0).startAddress)
                 .position(routes.get(0).startLocation)));
+        originLatLng.add(routes.get(0).startLocation);
+
         if(length>1) {
             destinationMarkers.add(mMap.addMarker(new MarkerOptions()
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.end_green))
                     .title(routes.get(length - 1).endAddress)
                     .position(routes.get(length - 1).endLocation)));
+            destinationAddress.add(routes.get(length-1).endAddress);
         }
         if(length==1)
         {
@@ -325,6 +351,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.end_green))
                     .title(routes.get(0).endAddress)
                     .position(routes.get(0).endLocation)));
+            destinationAddress.add(routes.get(0).endAddress);
         }
 
         if(length > 1){
@@ -333,6 +360,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         .icon(BitmapDescriptorFactory.defaultMarker())
                         .title(routes.get(i).startAddress)
                         .position(routes.get(i).startLocation)));
+            }
+
+            for (int j=1;j<length;j++){
+                waypointAddress.add(routes.get(j).startAddress);
             }
         }
 
@@ -353,7 +384,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
         for (Route route : routes) {
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(route.startLocation, 10));
+            //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(route.startLocation, 10));
 
             //System.out.println("Start: "+route.startAddress);
             //System.out.println("Stop: "+route.endAddress);
