@@ -2,17 +2,18 @@ package com.itshareplus.googlemapdemo;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
 import android.net.Uri;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.Button;
@@ -46,6 +47,7 @@ import Modules.Distance;
 import Modules.Duration;
 import Modules.Route;
 
+import static com.itshareplus.googlemapdemo.AllGeofencesActivity.GeofenceActive;
 import static com.itshareplus.googlemapdemo.R.id.tvDuration;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, DirectionFinderListener, GoogleApiClient.ConnectionCallbacks,
@@ -54,6 +56,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private Button btnFindPath;
     private Button currentlocation;
+    Context context;
+    //private GeofenceController.GeofenceControllerListener geofenceControllerListener = new GeofenceController.GeofenceControllerListener();
 
     private EditText etOrigin;
     private EditText etDestination;
@@ -65,15 +69,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private List<String> destinationAddress= new ArrayList<>();
     private List<String> waypointAddress = new ArrayList<>();
 
+    private List<LatLng> waypointLatLng = new ArrayList<>();
+    private List<NamedGeofence> geofenceList=new ArrayList<>();
+    private NamedGeofence geofence;
+
     private List<Polyline> polylinePaths = new ArrayList<>();
     private ProgressDialog progressDialog;
 
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     private final static int MY_PERMISSIONS_REQUEST_LOCATION = 34;
     //private GoogleMap mMap;
+   // AllGeofencesActivity GeofenceActive;
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
+    AllGeofencesActivity GeofenceActivedy;
+
     private Location curLocation;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +98,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
+
 
         // Create the LocationRequest object
         mLocationRequest = LocationRequest.create()
@@ -103,15 +117,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         currentlocation = (Button) findViewById(R.id.currentlocation);
 
 
-
         btnFindPath.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 sendRequest();
             }
         });
 
+        //GeofenceActive =AllGeofencesActivity.get();
+        //GeofenceActive.init(this);
+        GeofenceActivedy =AllGeofencesActivity.get();
+        GeofenceActivedy.init(this);
+        GeofenceController.getInstance().init(this);
+       // AllGeofencesFragment.getFragment().positiveClick();
+
+
+
+
     }
+
+
 
 
     private void sendRequest() {
@@ -225,7 +251,44 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         //mMap.addMarker(options);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,18));
     }
+/*
 
+    private GoogleApiClient.ConnectionCallbacks connectionAddListener = new GoogleApiClient.ConnectionCallbacks() {
+        @Override
+        public void onConnected(Bundle bundle) {
+            Intent intent = new Intent(context, AreWeThereIntentService.class);
+            PendingIntent pendingIntent = PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+            PendingResult<Status> result = LocationServices.GeofencingApi.addGeofences(mGoogleApiClient, getAddGeofencingRequest(), pendingIntent);
+            result.setResultCallback(new ResultCallback<Status>() {
+                @Override
+                public void onResult(Status status) {
+                    if (status.isSuccess()) {
+                        saveGeofence();
+                    } else {
+                        Log.e(TAG, "Registering geofence failed: " + status.getStatusMessage() + " : " + status.getStatusCode());
+                        sendError();
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void onConnectionSuspended(int i) {
+            //Log.e(TAG, "Connecting to GoogleApiClient suspended.");
+            sendError();
+        }
+    };
+
+
+    private GeofencingRequest getAddGeofencingRequest() {
+        List<Geofence> geofencesToAdd = new ArrayList<>();
+        geofencesToAdd.add(geofenceToAdd);
+        GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
+        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
+        builder.addGeofences(geofencesToAdd);
+        return builder.build();
+    }
+*/
 
     @Override
     public void onConnectionSuspended(int i) {
@@ -312,6 +375,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onDirectionFinderSuccess(ArrayList<Route> routes) {
         progressDialog.dismiss();
         polylinePaths = new ArrayList<>();
+
         originMarkers = new ArrayList<>();
         destinationMarkers = new ArrayList<>();
         waypointMarkers = new ArrayList<>();
@@ -319,6 +383,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         originLatLng = new ArrayList<>();
         destinationAddress = new ArrayList<>();
         waypointAddress = new ArrayList<>();
+
+        waypointLatLng = new ArrayList<>();
+
+        geofenceList =new ArrayList<>();
 
         Distance distance  = new Distance("0",0);
         Duration duration = new Duration("0",0);
@@ -360,6 +428,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         .icon(BitmapDescriptorFactory.defaultMarker())
                         .title(routes.get(i).startAddress)
                         .position(routes.get(i).startLocation)));
+                waypointLatLng.add(routes.get(i).startLocation);
             }
 
             for (int j=1;j<length;j++){
@@ -382,6 +451,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         duration.text = duration.value+" mins";
         ((TextView) findViewById(tvDuration)).setText(duration.text);
 
+        //AllGeofencesActivity.get().GeofenceActive.access();     //Doubt
+
+        if(length > 1){
+            for (int z=1;z<length-1;z++) {
+                System.out.println("Geofence: "+"z="+z+"lngth="+length);
+                geofence=new NamedGeofence();
+                geofence.latitude = waypointLatLng.get(z).latitude;
+                geofence.longitude = waypointLatLng.get(z).longitude;
+                geofence.radius = 1000;
+               // geofence.name=waypointAddress.get(z);
+                geofenceList.add(geofence);
+            }
+        }
+
+        if(length > 1) {
+            for(int geo=0;geo<geofenceList.size();geo++) {
+                System.out.println("Geo_len: "+"geo="+geo+"lngth="+length);
+                GeofenceActive.access(geofenceList.get(geo));
+
+            }
+        }
 
         for (Route route : routes) {
             //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(route.startLocation, 10));
@@ -416,4 +506,5 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             polylinePaths.add(mMap.addPolyline(polylineOptions));
         }
     }
+
 }
